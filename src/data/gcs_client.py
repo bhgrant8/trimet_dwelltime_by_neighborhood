@@ -23,18 +23,30 @@ at https://cloud.google.com/storage/docs.
 import argparse
 import datetime
 import pprint
+import hashlib
 
 # [START storage_upload_file]
 from google.cloud import storage
 
 # [END storage_upload_file]
 
-# [START dotenv_import_file]
-import dotenv
-import os
+# Added a md5 format to generate hash from file
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
+## Verifies the md5 checksum based on original value
+def verify_file(destination_file_name, md5_file_name):
+    original_md5 = open(md5_file_name, "rb")
+    new_md5 = md5(destination_file_name)
 
-# [dotenv_import_file]
+    if orginal_md5.read() == new_md5
+        return True
+    else:
+        return False
 
 def create_bucket(bucket_name):
     """Creates a new bucket."""
@@ -180,12 +192,18 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(source_blob_name)
-
+    md5 = bucket.blob(source_blob_name+".md5")
     blob.download_to_filename(destination_file_name)
-
-    print('Blob {} downloaded to {}.'.format(
-        source_blob_name,
-        destination_file_name))
+    md5.download_to_filename(destination_file_name+".md5")
+    verified = verify_file(destination_file_name, destination_file_name+".md5")
+    if verified == True:
+        print('Blob {} downloaded to {}.'.format(
+            source_blob_name,
+            destination_file_name))
+    else:
+        print('Blob {} downloaded to {} but did not pass md5 check'.format(
+            source_blob_name,
+            destination_file_name))
 
 
 def delete_blob(bucket_name, blob_name):
